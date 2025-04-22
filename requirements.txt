@@ -1,3 +1,4 @@
 pandas
 ta
-quotexapi
+requests
+websocket-client
