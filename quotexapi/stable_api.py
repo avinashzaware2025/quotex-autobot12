@@ -2,11 +2,11 @@ import random
 
 class Quotex:
     def __init__(self, email, password):
-        self.email = email
-        self.password = password
+        self.email = truptiauti2001@gmail.com
+        self.password = Samarth@123
 
     def login(self):
-        return True  # simulate successful login
+        return True  # Mock login success
 
     def get_all_profit(self):
         return {
