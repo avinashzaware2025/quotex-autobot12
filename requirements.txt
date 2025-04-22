@@ -1,5 +1,1 @@
 requests
-ta
-pandas
-python-dotenv
-finta
