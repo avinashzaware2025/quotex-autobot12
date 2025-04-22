@@ -1,38 +1,35 @@
-from quotexapi.stable import Quotex
+import random
 
-class QuotexBot(Quotex):
+class QuotexBot:
     def __init__(self, email, password):
-        super().__init__(email, password)
-        self.connect()
-        self.check_connect()
+        self.email = email
+        self.password = password
+        self.logged_in = False
 
-    def check_connect(self):
-        if self.check_connect():
-            print("✅ Login Successful")
-        else:
-            print("❌ Login Failed")
+    def login(self):
+        # Dummy login simulation
+        self.logged_in = True
+        return self.logged_in
 
-    def get_all_profit(self):
-        data = self.get_profile()
-        assets = data["balances"][0]["balances"]
-        result = {}
-        for a in assets:
-            if "profit_percentage" in a and a["profit_percentage"] >= 80:
-                result[a["symbol"]] = a["profit_percentage"]
-        return result
+    def get_high_profit_pairs(self):
+        # Simulated high-profit live pairs
+        return {
+            "EURUSD": 82,
+            "USDJPY": 85,
+            "AUDUSD": 90,
+            "GBPJPY": 80,
+        }
 
-    def place_real_trade(self, pair, direction, amount, duration=5):
-        """
-        Quotex वर DEMO balance वापरून real trade टाकतो.
-        direction: 'buy' किंवा 'sell'
-        amount: INR मध्ये
-        duration: trade duration (minutes)
-        """
-        self.change_asset(pair)
-        is_successful, trade_id = self.buy(amount, direction, duration)
-        if is_successful:
-            print(f"✅ Trade placed: {direction.upper()} ₹{amount} on {pair}")
-            return True
-        else:
-            print(f"❌ Trade failed on {pair}")
-            return False
+    def ema_signal(self, pair):
+        return random.choice(["BUY", "SELL", "WAIT"])
+
+    def macd_rsi_signal(self, pair):
+        return random.choice(["BUY", "SELL", "WAIT"])
+
+    def candlestick_signal(self, pair):
+        return random.choice(["BUY", "SELL", "WAIT"])
+
+    def place_demo_trade(self, pair, direction, amount=70):
+        # Simulate trade result
+        result = random.choice(["WIN", "LOSS"])
+        return f"{result} – {direction} on {pair} with ₹{amount}"
