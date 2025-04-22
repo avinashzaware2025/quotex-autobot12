@@ -28,7 +28,7 @@ if q.login():
         if ema_signal == macd_rsi_signal == candle_signal:
             final_signal = ema_signal
             print(f"✅ FINAL SIGNAL: {final_signal}")
-            # You can add q.buy() or q.sell() here
+            # याठिकाणी तुमचं trade execution logic टाकता येईल (q.buy/q.sell)
         else:
             print(f"⚠️ Signals not aligned – EMA: {ema_signal}, MACD+RSI: {macd_rsi_signal}, Candle: {candle_signal}")
 else:
