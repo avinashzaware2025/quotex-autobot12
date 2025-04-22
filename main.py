@@ -1,4 +1,6 @@
 from quotexapi.stable_api import Quotex
+import pandas as pd
+from finta import TA
 
 # ====== STEP 1: LOGIN ======
 q = Quotex(email="truptiauti2001@gmail.com", password="Samarth@123")
@@ -10,7 +12,7 @@ else:
 
 # ====== STEP 2: LIVE PAIRS + 80% PROFIT FILTER ======
 def get_live_pairs_with_high_profit():
-    # Dummy data - इथे नंतर Quotex API वापरून live data आणू
+    # Dummy data for now – Quotex API replace karaycha
     all_pairs = [
         {"symbol": "EURUSD", "profit": 82, "status": "live"},
         {"symbol": "GBPUSD", "profit": 78, "status": "closed"},
@@ -19,13 +21,41 @@ def get_live_pairs_with_high_profit():
         {"symbol": "EURJPY", "profit": 75, "status": "live"},
         {"symbol": "GBPJPY", "profit": 80, "status": "live"},
     ]
-
     filtered = [pair for pair in all_pairs if pair["status"] == "live" and pair["profit"] >= 80]
     return filtered
 
-# ====== STEP 3: PRINT FILTERED PAIRS ======
 selected_pairs = get_live_pairs_with_high_profit()
 print("🟢 80%+ Live Trading Pairs:")
 for pair in selected_pairs:
     print(f"🔹 {pair['symbol']} ({pair['profit']}%)")
 
+# ====== STEP 3: EMA Logic ======
+def get_signal(candles):
+    df = pd.DataFrame(candles)
+    df.columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+    df["EMA9"] = TA.EMA(df, 9)
+    df["EMA21"] = TA.EMA(df, 21)
+
+    if df["EMA9"].iloc[-1] > df["EMA21"].iloc[-1]:
+        return "BUY"
+    elif df["EMA9"].iloc[-1] < df["EMA21"].iloc[-1]:
+        return "SELL"
+    else:
+        return "WAIT"
+
+# ====== STEP 4: Test EMA Signal with mock data ======
+candles = [
+    [1, 1.1234, 1.1240, 1.1220, 1.1235, 1000],
+    [2, 1.1235, 1.1250, 1.1230, 1.1245, 1200],
+    [3, 1.1245, 1.1260, 1.1240, 1.1255, 1100],
+    [4, 1.1255, 1.1270, 1.1250, 1.1265, 1300],
+    [5, 1.1265, 1.1280, 1.1260, 1.1275, 1150],
+    [6, 1.1275, 1.1290, 1.1270, 1.1285, 1400],
+    [7, 1.1285, 1.1300, 1.1280, 1.1295, 1450],
+    [8, 1.1295, 1.1310, 1.1290, 1.1305, 1500],
+    [9, 1.1305, 1.1320, 1.1300, 1.1315, 1600],
+    [10, 1.1315, 1.1330, 1.1310, 1.1325, 1550],
+]
+
+signal = get_signal(candles)
+print(f"📊 EMA Signal: {signal}")
