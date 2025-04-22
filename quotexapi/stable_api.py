@@ -1,29 +1,38 @@
-import random
+from quotexapi.stable import Quotex
 
-class Quotex:
+class QuotexBot(Quotex):
     def __init__(self, email, password):
-        self.email = email
-        self.password = password
+        super().__init__(email, password)
+        self.connect()
+        self.check_connect()
 
-    def login(self):
-        return True  # Mock login success
+    def check_connect(self):
+        if self.check_connect():
+            print("✅ Login Successful")
+        else:
+            print("❌ Login Failed")
 
     def get_all_profit(self):
-        # Live trading pairs with profit percent (mocked)
-        return {
-            "EURUSD": {"profit": 82, "open": 1},
-            "USDJPY": {"profit": 85, "open": 1},
-            "AUDUSD": {"profit": 90, "open": 1},
-            "GBPJPY": {"profit": 80, "open": 1},
-            "EURJPY": {"profit": 70, "open": 0},   # Closed, not active
-            "GBPUSD": {"profit": 78, "open": 1},   # <80%, should be ignored
-        }
+        data = self.get_profile()
+        assets = data["balances"][0]["balances"]
+        result = {}
+        for a in assets:
+            if "profit_percentage" in a and a["profit_percentage"] >= 80:
+                result[a["symbol"]] = a["profit_percentage"]
+        return result
 
-    def get_ema_signal(self, pair):
-        return random.choice(["BUY", "SELL"])
-
-    def get_macd_rsi_signal(self, pair):
-        return random.choice(["BUY", "SELL", "WAIT"])
-
-    def get_candle_pattern(self, pair):
-        return random.choice(["BUY", "SELL", "WAIT"])
+    def place_real_trade(self, pair, direction, amount, duration=5):
+        """
+        Quotex वर DEMO balance वापरून real trade टाकतो.
+        direction: 'buy' किंवा 'sell'
+        amount: INR मध्ये
+        duration: trade duration (minutes)
+        """
+        self.change_asset(pair)
+        is_successful, trade_id = self.buy(amount, direction, duration)
+        if is_successful:
+            print(f"✅ Trade placed: {direction.upper()} ₹{amount} on {pair}")
+            return True
+        else:
+            print(f"❌ Trade failed on {pair}")
+            return False
