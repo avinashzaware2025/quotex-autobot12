@@ -1,65 +1,62 @@
+from stable_api import QuotexBot
+import ta
+import pandas as pd
 import time
-import os
-from stable_api import Quotex
 
+# 📩 Login info
 email = "truptiauti2001@gmail.com"
 password = "Samarth@123"
 
-q = Quotex(email, password)
+q = QuotexBot(email, password)
 
-if q.login():
-    print("✅ Login Successful")
+# 🔎 Get live profitable pairs
+pairs = q.get_all_profit()
+print("🟢 80%+ Live Trading Pairs:")
+for p, profit in pairs.items():
+    print(f"🔹 {p} ({profit}%)")
 
-    pairs_data = q.get_all_profit()
-    live_pairs = {k: v for k, v in pairs_data.items() if v['profit'] >= 80 and v['open'] == 1}
+# 📊 Define technical analysis function
+def get_indicators(df):
+    df['EMA'] = ta.trend.ema_indicator(df['close'], window=14).round(2)
+    macd = ta.trend.macd(df['close'])
+    df['MACD'] = macd.macd()
+    df['MACD_Signal'] = macd.macd_signal()
+    df['RSI'] = ta.momentum.rsi(df['close'], window=14)
+    return df
 
-    print("🟢 80%+ Live Trading Pairs:")
-    for pair in live_pairs:
-        print(f"🔹 {pair} ({pairs_data[pair]['profit']}%)")
+def get_candle_signal(df):
+    last = df.iloc[-1]
+    prev = df.iloc[-2]
+    if last['close'] > last['open'] and prev['close'] < prev['open']:
+        return "BUY"
+    elif last['close'] < last['open'] and prev['close'] > prev['open']:
+        return "SELL"
+    else:
+        return "WAIT"
 
-    initial_amount = 70
-    martingale_levels = [70, 160, 350, 800]
-    total_profit = 0
-    total_loss = 0
-    max_profit = 1000
-    max_loss = 500
+# 🧠 Strategy logic
+def get_signals(df):
+    df = get_indicators(df)
+    ema_signal = "BUY" if df['close'].iloc[-1] > df['EMA'].iloc[-1] else "SELL"
+    macd_rsi_signal = "BUY" if df['MACD'].iloc[-1] > df['MACD_Signal'].iloc[-1] and df['RSI'].iloc[-1] > 50 else "SELL"
+    candle_signal = get_candle_signal(df)
+    return ema_signal, macd_rsi_signal, candle_signal
 
-    for pair in live_pairs:
-        print(f"\n📈 {pair}")
+# 📈 Analyze and place trade
+for pair in pairs.keys():
+    df = q.get_candles(pair, 5, 100)
+    df = pd.DataFrame(df)
+    df.columns = ['timestamp', 'open', 'close', 'high', 'low', 'volume']
+    ema_signal, macd_rsi_signal, candle_signal = get_signals(df)
 
-        ema_signal = q.get_ema_signal(pair)
-        macd_rsi_signal = q.get_macd_rsi_signal(pair)
-        candle_signal = q.get_candle_pattern(pair)
+    print(f"\n📈 {pair}")
+    print(f"📊 EMA Signal: {ema_signal}")
+    print(f"📊 MACD + RSI Signal: {macd_rsi_signal}")
+    print(f"📊 Candlestick Pattern: {candle_signal}")
 
-        print(f"📊 EMA Signal: {ema_signal}")
-        print(f"📊 MACD + RSI Signal: {macd_rsi_signal}")
-        print(f"📊 Candlestick Pattern: {candle_signal}")
-
-        if ema_signal == macd_rsi_signal == candle_signal and ema_signal in ["BUY", "SELL"]:
-            print(f"✅ FINAL SIGNAL: {ema_signal}")
-
-            # Execute Martingale Strategy
-            for step, amount in enumerate(martingale_levels):
-                print(f"🔄 Step {step+1} – Placing {ema_signal} trade of ₹{amount} on {pair}")
-
-                # simulate result (use real API in production)
-                result = q.mock_trade_result(pair, ema_signal)  # WIN / LOSS
-
-                if result == "WIN":
-                    profit = int(amount * 0.8)
-                    total_profit += profit
-                    print(f"✅ Trade WON: +₹{profit} (Total Profit: ₹{total_profit})")
-                    break
-                else:
-                    total_loss += amount
-                    print(f"❌ Trade LOST: -₹{amount} (Total Loss: ₹{total_loss})")
-                    if total_loss >= max_loss:
-                        print("🛑 STOP: Max Loss Limit Reached.")
-                        exit()
-            if total_profit >= max_profit:
-                print("🎉 STOP: Profit Target Achieved.")
-                break
-        else:
-            print(f"⚠️ Signals not aligned – EMA: {ema_signal}, MACD+RSI: {macd_rsi_signal}, Candle: {candle_signal}")
-else:
-    print("❌ Login Failed")
+    if ema_signal == macd_rsi_signal == candle_signal:
+        print(f"✅ FINAL SIGNAL: {ema_signal}")
+        q.place_real_trade(pair, ema_signal.lower(), 70)
+        break
+    else:
+        print(f"⚠️ Signals not aligned – EMA: {ema_signal}, MACD+RSI: {macd_rsi_signal}, Candle: {candle_signal}")
